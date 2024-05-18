@@ -2,12 +2,10 @@ import java.util.HashMap;
 import java.util.Map;
 import static java.util.Objects.isNull;
 
-import java.util.HashMap;
-import java.util.Map;
-import static java.util.Objects.isNull;
-
 public class AssemblerInterpreter {
+
     // https://www.codewars.com/kata/assembler-interpreter-part-ii/ - 2 second part
+
     public static String interpret(final String input) {
         Map<String, Integer> regs = new HashMap<>();
         String[] program = input.split("\n");
