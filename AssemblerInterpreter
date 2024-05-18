@@ -1,0 +1,209 @@
+import java.util.HashMap;
+import java.util.Map;
+import static java.util.Objects.isNull;
+
+import java.util.HashMap;
+import java.util.Map;
+import static java.util.Objects.isNull;
+
+public class AssemblerInterpreter {
+    // https://www.codewars.com/kata/assembler-interpreter-part-ii/ - 2 second part
+    public static String interpret(final String input) {
+        Map<String, Integer> regs = new HashMap<>();
+        String[] program = input.split("\n");
+        String returnMassage = workingWithCommands(regs, 0,
+                findOperandNameNumberInProgram("end", program) - 1, program);
+        if (!returnMassage.isEmpty()) return returnMassage;
+        return null;
+    }
+
+    private static String createMassage(Map<String, Integer> regs, String message) {
+        StringBuilder sb = new StringBuilder();
+        message = message.trim();
+        for (int i = 3; i < message.length(); i++) {
+            if (message.charAt(i) == '\'') {
+                i++;
+                while (message.charAt(i)!= '\'') {
+                    sb.append(message.charAt(i));
+                    i++;
+                }
+            } else if (Character.isLetter(message.charAt(i))) {
+                if (isNull(regs.get(Character.toString(message.charAt(i))))) return "";
+                sb.append(regs.get(Character.toString(message.charAt(i))));
+            }
+            else if (message.charAt(i) == ';') break;
+        }
+        return sb.toString();
+    }
+
+    private static String subroutine(Map<String, Integer> regs, String nameOfFunction, String[] program) {
+        int startOperandNumberInSubroutine = findOperandNameNumberInProgram(nameOfFunction + ":", program) + 1;
+        int lastOperandNumberInSubroutine = findLastRealOperandNumberInFunction(startOperandNumberInSubroutine, program);
+        return workingWithCommands(regs, startOperandNumberInSubroutine, lastOperandNumberInSubroutine, program);
+    }
+
+    private static String workingWithCommands(Map<String, Integer> regs, int from, int to, String[] program) {
+        String returnMassage = "";
+        int x = -1;
+        int y = -1;
+        String[] commands;
+        for (int k = from; k <= to; k++) {
+            commands = program[k].trim().split("\\s+|,");
+            switch (commands[0]) {
+                case "", (";"):
+                    break;
+                case "mov":
+                    if (Character.isLetter(commands[3].trim().charAt(0))) regs.put(commands[1], regs.get(commands[3].trim()));
+                    else regs.put(commands[1], Integer.parseInt(commands[3].trim()));
+                    break;
+                case "inc":
+                    regs.put(commands[1], regs.get(commands[1]) + 1);
+                    break;
+                case "dec":
+                    regs.put(commands[1], regs.get(commands[1]) - 1);
+                    break;
+                case "add":
+                    if (Character.isLetter(commands[3].trim().charAt(0))) regs.put(commands[1], regs.get(commands[1]) + regs.get(commands[3].trim()));
+                    else regs.put(commands[1], regs.get(commands[1]) + Integer.parseInt(commands[3].trim()));
+                    break;
+                case "sub":
+                    if (Character.isLetter(commands[3].trim().charAt(0))) regs.put(commands[1], regs.get(commands[1]) - regs.get(commands[3].trim()));
+                    else regs.put(commands[1], regs.get(commands[1]) + Integer.parseInt(commands[3].trim()));
+                    break;
+                case "mul":
+                    if (Character.isLetter(commands[3].trim().charAt(0))) regs.put(commands[1], regs.get(commands[1]) * regs.get(commands[3].trim()));
+                    else regs.put(commands[1], regs.get(commands[1]) * Integer.parseInt(commands[3].trim()));
+                    break;
+                case "div":
+                    if (Character.isLetter(commands[3].trim().charAt(0))) regs.put(commands[1], regs.get(commands[1]) / regs.get(commands[3].trim()));
+                    else regs.put(commands[1], regs.get(commands[1]) / Integer.parseInt(commands[3].trim()));
+                    break;
+                case "jmp":
+                    if (findOperandNameNumberInProgram(commands[1] + ":", program) < from ||
+                            findOperandNameNumberInProgram(commands[1] + ":", program) > to)
+                        return subroutine(regs, commands[1], program);
+                    else returnMassage = subroutine(regs, commands[1], program);
+                    break;
+                case "cmp":
+                    if (Character.isLetter(commands[1].charAt(0))) x = regs.get(commands[1]);
+                    else x = Integer.parseInt(commands[1]);
+                    if (Character.isLetter(commands[3].charAt(0))) y = regs.get(commands[3]);
+                    else y = Integer.parseInt(commands[3]);
+                    break;
+                case "jne":
+                    if (x != y) {
+                        if (findOperandNameNumberInProgram(commands[1] + ":", program) < from ||
+                                findOperandNameNumberInProgram(commands[1] + ":", program) > to)
+                            return subroutine(regs, commands[1], program);
+                        else returnMassage = subroutine(regs, commands[1], program);
+                    }
+                    break;
+                case "je":
+                    if (x == y) {
+                        if (findOperandNameNumberInProgram(commands[1] + ":", program) < from ||
+                                findOperandNameNumberInProgram(commands[1] + ":", program) > to)
+                            return subroutine(regs, commands[1], program);
+                        else returnMassage = subroutine(regs, commands[1], program);
+                    }
+                    break;
+                case "jge":
+                    if (x >= y) {
+                        if (findOperandNameNumberInProgram(commands[1] + ":", program) < from ||
+                                findOperandNameNumberInProgram(commands[1] + ":", program) > to)
+                            return subroutine(regs, commands[1], program);
+                        else returnMassage = subroutine(regs, commands[1], program);
+                    }
+                    break;
+                case "jg":
+                    if (x > y) {
+                        if (findOperandNameNumberInProgram(commands[1] + ":", program) < from ||
+                                findOperandNameNumberInProgram(commands[1] + ":", program) > to)
+                            return subroutine(regs, commands[1], program);
+                        else returnMassage = subroutine(regs, commands[1], program);
+                    }
+                    break;
+                case "jle":
+                    if (x <= y) {
+                        if (findOperandNameNumberInProgram(commands[1] + ":", program) < from ||
+                                findOperandNameNumberInProgram(commands[1] + ":", program) > to)
+                            return subroutine(regs, commands[1], program);
+                        else returnMassage = subroutine(regs, commands[1], program);
+                    }
+                    break;
+                case "jl":
+                    if (x < y) {
+                        if (findOperandNameNumberInProgram(commands[1] + ":", program) < from ||
+                                findOperandNameNumberInProgram(commands[1] + ":", program) > to)
+                            return subroutine(regs, commands[1], program);
+                        else returnMassage = subroutine(regs, commands[1], program);
+                    }
+                    break;
+                case "call":
+                    returnMassage = subroutine(regs, commands[1], program);
+                    break;
+                case "msg":
+                    if (k == program.length - 1) return "";
+                    if (!(program.length - 1 > to &&
+                            program[k + 1].equals("end")) && !(program.length - 1 > to &&
+                            program[k + 1].trim().equals("ret"))) return "";
+                    returnMassage = createMassage(regs, program[k]);
+                    break;
+            }
+        }
+        return returnMassage;
+    }
+
+    private static int findOperandNameNumberInProgram(String operandName, String[] program) {
+        int operandNameOrder = -1;
+        String[] commands;
+        for (int i = 0; i < program.length; i++) {
+            commands = program[i].trim().split("\\s+|,");
+            if (commands[0].equals(operandName)) {
+                operandNameOrder = i;
+                break;
+            }
+        }
+        if (operandNameOrder == -1) System.out.println("Warning: operand name: " + operandName + " not found");
+        return operandNameOrder;
+    }
+
+    private static int findLastRealOperandNumberInFunction(int startOperandNumberOfSubroutine, String[] program) {
+        int lastOperandNumber = -1;
+        String[] commands;
+        for (int i = startOperandNumberOfSubroutine; i < program.length; i++) {
+            commands = program[i].trim().split("\\s+|,");
+            if (commands[0].equals("ret") || commands[0].isEmpty() ||
+                    commands[0].charAt(commands[0].length() - 1) == ':') {
+                lastOperandNumber = i - 1;
+                break;
+            }
+            if (i == program.length - 1) lastOperandNumber = i;
+        }
+        if (lastOperandNumber == -1) System.out.println("Warning: last operand in subroutine not found");
+        return lastOperandNumber;
+    }
+
+    public static void main(String[] args) {
+        //    private static String[] expected = {"(5+1)/2 = 3",
+        //                                        "5! = 120",
+        //                                        "Term 8 of Fibonacci series is: 21",
+        //                                        "mod(11, 3) = 2",
+        //                                        "gcd(81, 153) = 9",
+        //                                        null,
+        //                                        "2^10 = 1024"};
+        String program0 = "\n; My first program\nmov  a, 5\ninc  a\ncall function\nmsg  '(5+1)/2 = ', a    ; output message\nend\n\nfunction:\n    div  a, 2\n    ret\n";
+        String program1 = "\nmov   a, 5\nmov   b, a\nmov   c, a\ncall  proc_fact\ncall  print\nend\n\nproc_fact:\n    dec   b\n    mul   c, b\n    cmp   b, 1\n    jne   proc_fact\n    ret\n\nprint:\n    msg   a, '! = ', c ; output text\n    ret\n";
+        String program2 = "\nmov   a, 8            ; value\nmov   b, 0            ; next\nmov   c, 0            ; counter\nmov   d, 0            ; first\nmov   e, 1            ; second\ncall  proc_fib\ncall  print\nend\n\nproc_fib:\n    cmp   c, 2\n    jl    func_0\n    mov   b, d\n    add   b, e\n    mov   d, e\n    mov   e, b\n    inc   c\n    cmp   c, a\n    jle   proc_fib\n    ret\n\nfunc_0:\n    mov   b, c\n    inc   c\n    jmp   proc_fib\n\nprint:\n    msg   'Term ', a, ' of Fibonacci series is: ', b        ; output text\n    ret\n";
+        String program3 = "\nmov   a, 11           ; value1\nmov   b, 3            ; value2\ncall  mod_func\nmsg   'mod(', a, ', ', b, ') = ', d        ; output\nend\n\n; Mod function\nmod_func:\n    mov   c, a        ; temp1\n    div   c, b\n    mul   c, b\n    mov   d, a        ; temp2\n    sub   d, c\n    ret\n";
+        String program4 = "\nmov   a, 81         ; value1\nmov   b, 153        ; value2\ncall  init\ncall  proc_gcd\ncall  print\nend\n\nproc_gcd:\n    cmp   c, d\n    jne   loop\n    ret\n\nloop:\n    cmp   c, d\n    jg    a_bigger\n    jmp   b_bigger\n\na_bigger:\n    sub   c, d\n    jmp   proc_gcd\n\nb_bigger:\n    sub   d, c\n    jmp   proc_gcd\n\ninit:\n    cmp   a, 0\n    jl    a_abs\n    cmp   b, 0\n    jl    b_abs\n    mov   c, a            ; temp1\n    mov   d, b            ; temp2\n    ret\n\na_abs:\n    mul   a, -1\n    jmp   init\n\nb_abs:\n    mul   b, -1\n    jmp   init\n\nprint:\n    msg   'gcd(', a, ', ', b, ') = ', c\n    ret\n";
+        String program5 = "\ncall  func1\ncall  print\nend\n\nfunc1:\n    call  func2\n    ret\n\nfunc2:\n    ret\n\nprint:\n    msg 'This program should return null'\n";
+        String program6 = "\nmov   a, 2            ; value1\nmov   b, 10           ; value2\nmov   c, a            ; temp1\nmov   d, b            ; temp2\ncall  proc_func\ncall  print\nend\n\nproc_func:\n    cmp   d, 1\n    je    continue\n    mul   c, a\n    dec   d\n    call  proc_func\n\ncontinue:\n    ret\n\nprint:\n    msg a, '^', b, ' = ', c\n    ret\n";
+        System.out.println(interpret(program0));
+        System.out.println(interpret(program1));
+        System.out.println(interpret(program2));
+        System.out.println(interpret(program3));
+        System.out.println(interpret(program4));
+        System.out.println(interpret(program5));
+        System.out.println(interpret(program6));
+    }
+}
